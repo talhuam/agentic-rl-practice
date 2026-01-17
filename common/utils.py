@@ -17,11 +17,14 @@ class TrainingConfig:
     num_train_epochs: int = 3
     per_device_train_batch_size: int = 4
     gradient_accumulation_steps: int = 4
-    learning_rate: float = 5e-5
+    learning_rate: float = 1e-5
     warmup_steps: int = 100
     logging_steps: int = 10
     save_steps: int = 500
     eval_steps: int = 500
+
+    # 训练优化
+    use_liger_kernel: bool = False
 
     # RL特定配置
     max_new_tokens: int = 512
@@ -29,8 +32,8 @@ class TrainingConfig:
     top_p: float = 0.9
 
     # 硬件配置
-    use_fp16: bool = True
-    use_bf16: bool = False
+    use_fp16: bool = False
+    use_bf16: bool = True
     gradient_checkpointing: bool = True
 
     # LoRA配置

@@ -1,11 +1,12 @@
 import os.path
-
 from common.utils import TrainingConfig, setup_training_environment, DetailedLoggingCallback
 from common.global_config import model_name, sft_output_path, model_root_path
 from trl import SFTConfig, SFTTrainer
 from peft import LoraConfig
 from dataset import GSM8kDataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def train():
@@ -15,19 +16,24 @@ def train():
         use_lora=True,
         lora_r=16,
         lora_alpha=32,
-        lora_target_modules=["q_proj", "v_proj", "k_proj", "o_proj"]
+        lora_target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
+        use_liger_kernel=False,
+        num_train_epochs=1,
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=4,
+        max_length=2048
     )
 
     # 准备训练环境
     setup_training_environment(config)
 
-    # 训练数据(prompt-completion)
-    dataset = GSM8kDataset("train", format_type="sft").get_dataset()
-
     # 加载模型和分词器
     model_path = os.path.join(model_root_path, model_name)
     model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+
+    # 训练数据(prompt-completion)
+    dataset = GSM8kDataset("train", format_type="sft", tokenizer=tokenizer).get_dataset()
 
     # 训练设置
     peft_config = LoraConfig(
@@ -51,6 +57,7 @@ def train():
         gradient_checkpointing=config.gradient_checkpointing,
         max_length=config.max_length,
         report_to="tensorboard",
+        use_liger_kernel=config.use_liger_kernel
     )
 
     # 日志回调

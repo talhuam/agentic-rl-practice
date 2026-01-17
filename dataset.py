@@ -17,7 +17,7 @@ class GSM8kDataset:
         self.tokenizer = tokenizer
 
         print(f"📥 加载 GSM8K 数据集 (split={split})...")
-        self.dataset = load_dataset("openai/gsm8k", "main", split=split)
+        self.dataset = load_dataset("../data/gsm8k", split=split)
         if max_samples:
             self.dataset = self.dataset.select(range(min(max_samples, len(self.dataset))))
             print(f"   使用 {len(self.dataset)} 个样本（限制: {max_samples}）")
@@ -25,7 +25,8 @@ class GSM8kDataset:
             print(f"   加载了 {len(self.dataset)} 个样本")
 
     def format_for_sft(self, sample: Dict[str, Any]) -> Dict[str, str]:
-        """格式化为SFT训练格式"""
+        """格式化为SFT训练格式，构造prompt-completion问答对"""
+        pass
         question = sample["question"]
         answer = sample["answer"]
 
@@ -37,8 +38,15 @@ class GSM8kDataset:
             reasoning = answer
             final_answer = ""
 
-        prompt = f"Question: {question}\n\nLet`s solve this step by step:\n"
-        completion = f"{reasoning}\n\nFinal Answer: {final_answer}"
+        prompt = f"Question: {question}\n\nLet`s solve this step by step:"
+        # 应用对话模版
+        if self.tokenizer:
+            prompt = self.tokenizer.apply_chat_template([{
+                "role": "user",
+                "content": prompt
+            }], add_generation_prompt=True, tokenize=False)
+
+        completion = f"<think>\n{reasoning}\n</think>\nFinal Answer: {final_answer}<|im_end|>"
         return {
             "prompt": prompt,
             "completion": completion,
