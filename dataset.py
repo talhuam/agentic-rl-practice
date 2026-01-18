@@ -59,7 +59,7 @@ class GSM8kDataset:
         answer = sample["answer"]
         # rl只提取最终答案，推理过程不需要
         if "####" in answer:
-            _, final_answer = answer.split("#####")
+            _, final_answer = answer.split("####")
             final_answer = final_answer.strip()
         else:
             final_answer = answer.strip()

@@ -130,8 +130,8 @@ class DetailedLoggingCallback(TrainerCallback):
             log_parts.append(f"LR: {logs['learning_rate']:.2e}")
 
         # GRPO特定指标
-        if "rewards/mean" in logs:
-            log_parts.append(f"Reward: {logs['rewards/mean']:.4f}")
+        if "rewards/reward_fn/mean" in logs:
+            log_parts.append(f"Reward: {logs['rewards/reward_fn/mean']:.4f}")
 
         if "objective/kl" in logs:
             log_parts.append(f"KL: {logs['objective/kl']:.4f}")

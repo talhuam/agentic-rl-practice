@@ -5,8 +5,9 @@
 # 修改全局配置 common/global_config.py
 python download_model_ms.py
 ```
-## 模型训练
-### SFT
+## SFT训练
+采用lora高效微调，对模型注意力模块线性层(q_proj、k_proj、v_proj、o_proj)增加旁路可训练低秩矩阵
+### 训练
 + 命令
 ```shell
 cd train
@@ -15,4 +16,44 @@ CUDA_VISIBLE_DEVICES=0 python train_sft.py
 + 训练过程曲线
 ![训练曲线](image/sft_train.png)
 
+## GRPO训练
+在sft的基础上再训练，将lora模块重新置为*可训练*，其他模块冻结
+```python
+base_model = AutoModelForCausalLM.from_pretrained(base_model_path, trust_remote_code=True)
+model = PeftModel.from_pretrained(base_model, "output/sft_output")
+for name, params in model.named_parameters():
+    if "lora" in name:
+        params.requires_grad_(True)
+```
++ 命令
+```shell
+cd train
+CUDA_VISIBLE_DEVICES=0 python train_grpo.py
+```
+## 推理
+### transformers API
+```shell
+# -q: 问题
+# -m: 推理模式(sft, grpo)，用于控制加载lora模块
+# -r: 传入则开启推理模式，不传则不开启推理模式
+python inference.py -q "2的10次方除以32等于多少？" -m grpo -r
+```
+### vllm
++ 启动服务
+```shell
+vllm serve <base_model_path> \
+    --enable-lora \
+    --lora-modules sft-lora=./train/output/sft_output grpo-lora=./train/output/grpo_output \
+    --enable-reasoning --reasoning-parser deepseek_r1
+```
++ 请求
+```shell
+curl http://localhost:8000/v1/completions \
+    -H "Content-Type: application/json" \
+    -d '{
+        "model": "sft-lora",
+        "prompt": "2的10次方除以32等于多少？",
+        "max_tokens": 1024
+    }'
+```
 
