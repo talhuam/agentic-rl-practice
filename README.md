@@ -17,7 +17,10 @@ CUDA_VISIBLE_DEVICES=0 python train_sft.py
 ![训练曲线](image/sft_train.png)
 
 ## GRPO训练
-在sft的基础上再训练，将lora模块重新置为*可训练*，其他模块冻结
+在sft的基础上再训练，将lora模块重新置为*可训练*，其他模块冻结  
+奖励函数采用：
++ 准确度：不要求答案和gt一致，可传入容忍值，相差在容忍值内，则奖励1，否则0
++ 推理步数：每个推理步数奖励0.1，最高奖励0.5
 ```python
 base_model = AutoModelForCausalLM.from_pretrained(base_model_path, trust_remote_code=True)
 model = PeftModel.from_pretrained(base_model, "output/sft_output")
